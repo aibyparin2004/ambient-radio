@@ -74,13 +74,62 @@ export interface ExtractedTrack {
 }
 
 /**
- * Fetch ALL tracks (up to 100+) from a YouTube Playlist using HTML Scraper + RSS fallback.
+ * Fetch ALL 50-200+ tracks from a YouTube Playlist using Multi-Engine API & HTML Scraper.
  */
 export async function fetchYouTubePlaylistTracks(playlistId: string): Promise<ExtractedTrack[]> {
   if (!playlistId) return [];
   const cleanId = extractYouTubePlaylistId(playlistId) || playlistId;
 
-  // 1. Strategy A: Direct YouTube Playlist Page HTML Scraper (Extracts ALL videos in playlist, 50-100+)
+  // 1. Strategy A: Open YouTube API Instances (Piped / Invidious - Fetches ALL 50-200+ items in 1 request)
+  const apiInstances = [
+    `https://pipedapi.kavin.rocks/playlists/${cleanId}`,
+    `https://api.piped.yt/playlists/${cleanId}`,
+    `https://invidious.projectsegfau.lt/api/v1/playlists/${cleanId}`,
+    `https://yt.drgnz.club/api/v1/playlists/${cleanId}`,
+  ];
+
+  for (const apiUrl of apiInstances) {
+    try {
+      const apiRes = await fetch(apiUrl, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+        signal: AbortSignal.timeout(4000),
+      });
+
+      if (apiRes.ok) {
+        const apiData = await apiRes.json();
+        const rawItems = apiData.relatedStreams || apiData.videos || [];
+
+        if (Array.isArray(rawItems) && rawItems.length > 0) {
+          const tracks: ExtractedTrack[] = [];
+          const seen = new Set<string>();
+
+          for (const item of rawItems) {
+            const rawVId = item.url ? item.url.split("v=")[1] : item.videoId;
+            const cleanVId = extractYouTubeVideoId(rawVId || "");
+
+            if (cleanVId && !seen.has(cleanVId)) {
+              seen.add(cleanVId);
+              tracks.push({
+                youtubeVideoId: cleanVId,
+                title: (item.title || "Ambient Track").trim(),
+                artist: (item.uploaderName || item.author || "YouTube Creator").trim(),
+                thumbnail: getYouTubeThumbnailUrl(cleanVId, "hq"),
+              });
+            }
+          }
+
+          if (tracks.length > 0) {
+            console.log(`✔ Strategy A (API) fetched ${tracks.length} tracks from YouTube playlist ${cleanId}`);
+            return tracks;
+          }
+        }
+      }
+    } catch (e) {
+      // Continue to next instance
+    }
+  }
+
+  // 2. Strategy B: YouTube Playlist Page HTML Scraper (Extracts initial ytInitialData JSON renderers)
   try {
     const pageUrl = `https://www.youtube.com/playlist?list=${cleanId}`;
     const res = await fetch(pageUrl, {
@@ -100,7 +149,6 @@ export async function fetchYouTubePlaylistTracks(playlistId: string): Promise<Ex
         const tracks: ExtractedTrack[] = [];
         const seenIds = new Set<string>();
 
-        // Recursively extract all playlistVideoRenderer objects from JSON
         const extractVideoRenderers = (obj: any) => {
           if (!obj || typeof obj !== "object") return;
 
@@ -127,7 +175,6 @@ export async function fetchYouTubePlaylistTracks(playlistId: string): Promise<Ex
             }
           }
 
-          // Recurse down children
           for (const key of Object.keys(obj)) {
             if (Array.isArray(obj[key])) {
               obj[key].forEach((child: any) => extractVideoRenderers(child));
@@ -140,6 +187,7 @@ export async function fetchYouTubePlaylistTracks(playlistId: string): Promise<Ex
         extractVideoRenderers(jsonData);
 
         if (tracks.length > 0) {
+          console.log(`✔ Strategy B (HTML) fetched ${tracks.length} tracks from YouTube playlist ${cleanId}`);
           return tracks;
         }
       }
@@ -148,7 +196,7 @@ export async function fetchYouTubePlaylistTracks(playlistId: string): Promise<Ex
     console.warn("HTML Scraper warning, falling back to RSS:", htmlErr);
   }
 
-  // 2. Strategy B: YouTube RSS Feed (Fallback)
+  // 3. Strategy C: YouTube RSS Feed (Fallback)
   try {
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?playlist_id=${cleanId}`;
     const res = await fetch(rssUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
