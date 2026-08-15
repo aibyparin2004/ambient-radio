@@ -117,6 +117,19 @@ export const AdminSidebar: React.FC = () => {
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
+            if (item.name === "Security & Password") {
+              return (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => setIsPasswordModalOpen(true)}
+                  className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                >
+                  <Icon className="h-4 w-4 text-emerald-400" />
+                  <span>{item.name}</span>
+                </button>
+              );
+            }
             return (
               <Link
                 key={item.href}
