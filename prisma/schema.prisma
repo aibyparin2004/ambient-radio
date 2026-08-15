@@ -1,0 +1,95 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Playlist {
+  id                String   @id @default(uuid())
+  youtubePlaylistId String?  
+  name              String
+  description       String?
+  coverImage        String?
+  centerText        String?  @default("અર્બન ગુજરાતી")
+  centerSubtitle    String?  @default("URBAN GUJARATI AMBIENT RADIO • OPEN ALL HOURS")
+  bgImageDay        String?
+  bgImageNoon       String?
+  bgImageEvening    String?
+  bgImageNight      String?
+  bgVideoUrl        String?
+  enabled           Boolean  @default(true)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  songs             Song[]
+}
+
+model Song {
+  id             String   @id @default(uuid())
+  playlistId     String
+  playlist       Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  youtubeVideoId String
+  title          String
+  artist         String?
+  thumbnail      String?
+  enabled        Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ThemeConfig {
+  id               String   @id @default(uuid())
+  name             String   @unique // DAY, NOON, EVENING, NIGHT, RAIN, WINTER
+  backgroundType   String   @default("gradient")
+  backgroundUrl    String?
+  gradientCss      String   @default("linear-gradient(135deg, #0f172a, #1e1b4b)")
+  overlayOpacity   Float    @default(0.4)
+  blurAmount       Int      @default(0)
+  brightness       Float    @default(1.0)
+  particleType     String   @default("none")
+  particleCount    Int      @default(40)
+  animationSpeed   Float    @default(1.0)
+  accentColor      String   @default("#e2e8f0")
+  enabled          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ThemeSchedule {
+  id        String   @id @default(uuid())
+  themeName String   @unique // DAY, NOON, EVENING, NIGHT
+  startTime String
+  endTime   String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSettings {
+  id                 String   @id @default("default")
+  siteName           String   @default("AURA — Ambient Radio")
+  logoText           String   @default("AURA")
+  description        String   @default("A living cinematic ambient music room that evolves with the time of day.")
+  defaultPlaylistId  String?
+  defaultBgImage     String?
+  defaultTheme       String   @default("AUTO")
+  autoScheduleActive Boolean  @default(true)
+  rainEnabled        Boolean  @default(false)
+  rainIntensity      Float    @default(0.5)
+  winterEnabled      Boolean  @default(false)
+  snowIntensity      Float    @default(0.5)
+  animationIntensity Float    @default(1.0)
+  updatedAt          DateTime @updatedAt
+}
