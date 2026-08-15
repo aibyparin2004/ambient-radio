@@ -190,7 +190,19 @@ export default function AdminPlaylistsPage() {
 
   const [syncingId, setSyncingId] = useState<string | null>(null);
 
-  const handleSyncPlaylist = async (playlistId: string) => {
+  const handleSyncPlaylist = async (playlistId: string, existingYtId?: string | null) => {
+    let ytId = existingYtId;
+    if (!ytId) {
+      const input = prompt("Enter YouTube Playlist URL or Playlist ID to import all 50-100+ tracks:");
+      if (!input) return;
+      ytId = input.trim();
+      await fetch(`/api/playlists/${playlistId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ youtubePlaylistId: ytId }),
+      });
+    }
+
     setSyncingId(playlistId);
     try {
       const res = await fetch(`/api/playlists/${playlistId}/sync`, {
@@ -321,17 +333,15 @@ export default function AdminPlaylistsPage() {
                       <span>Add Track</span>
                     </button>
 
-                    {pl.youtubePlaylistId && (
-                      <button
-                        onClick={() => handleSyncPlaylist(pl.id)}
-                        disabled={syncingId === pl.id}
-                        title="Fetch & import all 50-100+ tracks directly from YouTube"
-                        className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 disabled:opacity-50"
-                      >
-                        <RefreshCw className={`h-3 w-3 ${syncingId === pl.id ? "animate-spin" : ""}`} />
-                        <span>{syncingId === pl.id ? "Syncing..." : "Sync All Tracks"}</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleSyncPlaylist(pl.id, pl.youtubePlaylistId)}
+                      disabled={syncingId === pl.id}
+                      title="Fetch & import all 50-100+ tracks directly from YouTube"
+                      className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${syncingId === pl.id ? "animate-spin" : ""}`} />
+                      <span>{syncingId === pl.id ? "Syncing..." : "🔄 Sync All Tracks"}</span>
+                    </button>
                   </div>
 
                   <Link
