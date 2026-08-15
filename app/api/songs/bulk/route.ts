@@ -52,10 +52,10 @@ export async function POST(request: Request) {
 
     let currentMaxOrder = playlist.songs.reduce((max, s) => Math.max(max, s.sortOrder), 0);
 
-    // Fetch initial batch metadata via oEmbed for top tracks
+    // Fetch REAL actual song titles & artist names for ALL tracks (no truncation limit!)
     const songsToInsert = await Promise.all(
-      newVideoIds.map(async (vId, idx) => {
-        const info = idx < 20 ? await fetchYouTubeVideoInfo(vId) : { title: `Track #${idx + 1}`, artist: "YouTube Artist" };
+      newVideoIds.map(async (vId) => {
+        const info = await fetchYouTubeVideoInfo(vId);
         currentMaxOrder++;
         return {
           playlistId: playlist.id,

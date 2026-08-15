@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { Music, Plus, Edit2, Trash2, X, ExternalLink, FileText, Download } from "lucide-react";
+import { Music, Plus, Edit2, Trash2, X, ExternalLink, FileText, Download, Sparkles } from "lucide-react";
 
 interface Song {
   id: string;
@@ -166,6 +166,27 @@ export default function AdminSongsPage() {
     }
   };
 
+  const [cleaningTitles, setCleaningTitles] = useState(false);
+
+  const handleCleanTitles = async () => {
+    setCleaningTitles(true);
+    try {
+      const res = await fetch("/api/songs/clean-titles", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`✔ Success! ${data.message}`);
+        loadData();
+      } else {
+        alert(data.error || "Failed to clean song titles");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Network error while cleaning song titles");
+    } finally {
+      setCleaningTitles(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 font-sans">
       <AdminSidebar />
@@ -181,6 +202,16 @@ export default function AdminSongsPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={handleCleanTitles}
+              disabled={cleaningTitles}
+              title="Fetch and replace all 'Track #...' with actual YouTube song titles & artists"
+              className="flex items-center gap-2 rounded-xl bg-purple-500/20 px-4 py-2.5 text-xs font-semibold text-purple-300 hover:bg-purple-500/30 border border-purple-500/30 transition-colors disabled:opacity-50"
+            >
+              <Sparkles className={`h-4 w-4 ${cleaningTitles ? "animate-spin" : ""}`} />
+              <span>{cleaningTitles ? "Fetching Real Titles..." : "🪄 Fetch Real Song Titles & Artists"}</span>
+            </button>
+
             <button
               onClick={() => setIsBulkModalOpen(true)}
               className="flex items-center gap-2 rounded-xl bg-emerald-500/20 px-4 py-2.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 transition-colors"
