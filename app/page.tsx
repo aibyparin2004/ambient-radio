@@ -372,7 +372,6 @@ export default function PublicMusicRoomPage() {
           onSelectSongIndex={handleSelectSongFromQueue}
         />
       </div>
-      </div>
     </div>
   );
 }
