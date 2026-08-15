@@ -81,7 +81,7 @@ export default function PublicMusicRoomPage() {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [activePlaylist, setActivePlaylist] = useState<Playlist | null>(null);
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(80);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -89,7 +89,7 @@ export default function PublicMusicRoomPage() {
   const [seekToTime, setSeekToTime] = useState<number | null>(null);
 
   // UI State
-  const [showAutoplayOverlay, setShowAutoplayOverlay] = useState(true);
+  const [showAutoplayOverlay, setShowAutoplayOverlay] = useState(false);
   const [isPlaylistDrawerOpen, setIsPlaylistDrawerOpen] = useState(false);
   const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState(false);
   const [siteName, setSiteName] = useState("AURA");
@@ -371,15 +371,7 @@ export default function PublicMusicRoomPage() {
           onClose={() => setIsQueueDrawerOpen(false)}
           onSelectSongIndex={handleSelectSongFromQueue}
         />
-
-        <AutoplayOverlay
-          isVisible={showAutoplayOverlay}
-          onEnter={() => {
-            setShowAutoplayOverlay(false);
-            setIsPlaying(true);
-          }}
-          siteName={siteName}
-        />
+      </div>
       </div>
     </div>
   );
