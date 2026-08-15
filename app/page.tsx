@@ -20,7 +20,7 @@ import {
   ThemeName,
 } from "@/lib/environment-engine";
 
-import { Sparkles, EyeOff } from "lucide-react";
+import { Sparkles, EyeOff, VolumeX } from "lucide-react";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -83,7 +83,8 @@ export default function PublicMusicRoomPage() {
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(80);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [seekToTime, setSeekToTime] = useState<number | null>(null);
@@ -93,6 +94,27 @@ export default function PublicMusicRoomPage() {
   const [isPlaylistDrawerOpen, setIsPlaylistDrawerOpen] = useState(false);
   const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState(false);
   const [siteName, setSiteName] = useState("AURA");
+
+  // Auto-unmute on first user touch/click anywhere on page
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      if (!hasInteracted) {
+        setHasInteracted(true);
+        setIsMuted(false);
+        setIsPlaying(true);
+      }
+    };
+
+    window.addEventListener("click", handleFirstInteraction, { once: true });
+    window.addEventListener("touchstart", handleFirstInteraction, { once: true });
+    window.addEventListener("pointerdown", handleFirstInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener("click", handleFirstInteraction);
+      window.removeEventListener("touchstart", handleFirstInteraction);
+      window.removeEventListener("pointerdown", handleFirstInteraction);
+    };
+  }, [hasInteracted]);
 
   // 1. Load Initial Data (Playlists, Themes, Schedule, Site Settings)
   useEffect(() => {
@@ -277,6 +299,21 @@ export default function PublicMusicRoomPage() {
             <LiveClockWidget activeThemeName={resolvedThemePreset.name} />
             <LiveListenersBadge />
 
+            {/* Floating Auto-Unmute Notification Pill */}
+        {isMuted && (
+          <button
+            onClick={() => {
+              setIsMuted(false);
+              setIsPlaying(true);
+            }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full bg-emerald-500/20 px-5 py-2 text-xs font-mono text-emerald-300 border border-emerald-500/30 backdrop-blur-md shadow-lg animate-bounce hover:bg-emerald-500/30 transition-all cursor-pointer select-none"
+          >
+            <VolumeX className="h-4 w-4 text-emerald-400" />
+            <span>🔊 TAP ANYWHERE TO UNMUTE AUDIO</span>
+          </button>
+        )}
+
+        {/* Centerpiece Text & Subtitle */}
             {/* Reduce Motion Toggle */}
             <button
               onClick={() => setReduceMotion((prev) => !prev)}
