@@ -1,0 +1,9 @@
+# Netlify App Router Clean Route Rewrites
+/admin/security      /admin/security/index.html     200
+/admin/settings      /admin/settings/index.html     200
+/admin/playlists     /admin/playlists/index.html    200
+/admin/songs         /admin/songs/index.html        200
+/admin/backgrounds   /admin/backgrounds/index.html  200
+/admin/themes        /admin/themes/index.html       200
+/admin/schedule      /admin/schedule/index.html     200
+/admin/*             /admin                         200
