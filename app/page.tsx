@@ -89,7 +89,7 @@ export default function PublicMusicRoomPage() {
   const [seekToTime, setSeekToTime] = useState<number | null>(null);
 
   // UI State
-  const [showAutoplayOverlay, setShowAutoplayOverlay] = useState(false);
+  const [showAutoplayOverlay, setShowAutoplayOverlay] = useState(true);
   const [isPlaylistDrawerOpen, setIsPlaylistDrawerOpen] = useState(false);
   const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState(false);
   const [siteName, setSiteName] = useState("AURA");

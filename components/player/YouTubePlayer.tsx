@@ -196,7 +196,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   }, [volume, isMuted]);
 
   return (
-    <div className="fixed -bottom-[9999px] -right-[9999px] h-1 w-1 opacity-0 pointer-events-none aria-hidden">
+    <div className="fixed bottom-0 left-0 w-1 h-1 z-0 overflow-hidden pointer-events-auto opacity-10">
       <div ref={containerRef} />
     </div>
   );
