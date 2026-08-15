@@ -168,14 +168,17 @@ export default function AdminPlaylistsPage() {
         body: JSON.stringify(formData),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
         setIsModalOpen(false);
         await loadPlaylists();
       } else {
-        alert("Failed to save playlist");
+        alert(data.error || data.message || "Failed to save playlist. Image size might be too large.");
       }
     } catch (e) {
       console.error(e);
+      alert("Network error while saving playlist.");
     } finally {
       setSaving(false);
     }
