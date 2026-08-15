@@ -41,8 +41,8 @@ export function extractYouTubePlaylistId(input: string): string | null {
   if (!input) return null;
   const trimmed = input.trim();
 
-  // Common playlist ID patterns (PL..., OLAK5uy..., etc.)
-  if (/^[a-zA-Z0-9_-]{12,40}$/.test(trimmed)) {
+  // Common playlist ID patterns (PL..., OLAK5uy..., RD..., etc.)
+  if (/^[a-zA-Z0-9_-]{12,60}$/.test(trimmed)) {
     return trimmed;
   }
 
@@ -50,13 +50,35 @@ export function extractYouTubePlaylistId(input: string): string | null {
     const url = new URL(trimmed);
     if (url.hostname.includes("youtube.com")) {
       const list = url.searchParams.get("list");
-      if (list && /^[a-zA-Z0-9_-]{12,40}$/.test(list)) return list;
+      if (list && /^[a-zA-Z0-9_-]{12,60}$/.test(list)) return list;
     }
   } catch {
     // Not a URL
   }
 
   return null;
+}
+
+/**
+ * Extract all unique 11-character YouTube Video IDs from any bulk text or list of links.
+ */
+export function extractAllVideoIdsFromText(text: string): string[] {
+  if (!text) return [];
+  const seen = new Set<string>();
+  const results: string[] = [];
+
+  const regex = /(?:v=|videoId"[:\s]*"|youtu\.be\/|\/shorts\/)([a-zA-Z0-9_-]{11})/g;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    const vId = match[1];
+    if (vId && !seen.has(vId)) {
+      seen.add(vId);
+      results.push(vId);
+    }
+  }
+
+  return results;
 }
 
 export function getYouTubeThumbnailUrl(videoId: string, quality: "hq" | "max" = "hq"): string {
@@ -74,13 +96,30 @@ export interface ExtractedTrack {
 }
 
 /**
- * Fetch ALL 50-200+ tracks from a YouTube Playlist using Multi-Engine API & HTML Scraper.
+ * Fetch video title and author metadata for a single YouTube video ID via oEmbed.
+ */
+export async function fetchYouTubeVideoInfo(videoId: string): Promise<{ title: string; artist: string }> {
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        title: data.title || "Ambient Track",
+        artist: data.author_name || "YouTube Creator",
+      };
+    }
+  } catch {}
+  return { title: "Ambient Track", artist: "YouTube Creator" };
+}
+
+/**
+ * Fetch ALL 50-200+ tracks from ANY YouTube Playlist URL or ID using Multi-Engine & Direct Regex Extractor.
  */
 export async function fetchYouTubePlaylistTracks(playlistId: string): Promise<ExtractedTrack[]> {
   if (!playlistId) return [];
-  const cleanId = extractYouTubePlaylistId(playlistId) || playlistId;
+  const cleanId = extractYouTubePlaylistId(playlistId) || playlistId.trim();
 
-  // 1. Strategy A: Open YouTube API Instances (Piped / Invidious - Fetches ALL 50-200+ items in 1 request)
+  // 1. Strategy A: Open YouTube API Instances (Piped / Invidious - Fetches ALL 50-200+ items)
   const apiInstances = [
     `https://pipedapi.kavin.rocks/playlists/${cleanId}`,
     `https://api.piped.yt/playlists/${cleanId}`,
@@ -92,7 +131,7 @@ export async function fetchYouTubePlaylistTracks(playlistId: string): Promise<Ex
     try {
       const apiRes = await fetch(apiUrl, {
         headers: { "User-Agent": "Mozilla/5.0" },
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(5000),
       });
 
       if (apiRes.ok) {
@@ -124,12 +163,10 @@ export async function fetchYouTubePlaylistTracks(playlistId: string): Promise<Ex
           }
         }
       }
-    } catch (e) {
-      // Continue to next instance
-    }
+    } catch (e) {}
   }
 
-  // 2. Strategy B: YouTube Playlist Page HTML Scraper (Extracts initial ytInitialData JSON renderers)
+  // 2. Strategy B: Direct YouTube Playlist Page HTML Scraper with Regex Deep Search (Gets 50-200+ items)
   try {
     const pageUrl = `https://www.youtube.com/playlist?list=${cleanId}`;
     const res = await fetch(pageUrl, {
@@ -144,52 +181,69 @@ export async function fetchYouTubePlaylistTracks(playlistId: string): Promise<Ex
       const htmlText = await res.text();
       const ytDataMatch = htmlText.match(/var ytInitialData = ({[\s\S]*?});<\/script>/);
 
+      const tracks: ExtractedTrack[] = [];
+      const seenIds = new Set<string>();
+
+      // B1. Structured JSON extraction
       if (ytDataMatch && ytDataMatch[1]) {
-        const jsonData = JSON.parse(ytDataMatch[1]);
-        const tracks: ExtractedTrack[] = [];
-        const seenIds = new Set<string>();
+        try {
+          const jsonData = JSON.parse(ytDataMatch[1]);
+          const extractVideoRenderers = (obj: any) => {
+            if (!obj || typeof obj !== "object") return;
 
-        const extractVideoRenderers = (obj: any) => {
-          if (!obj || typeof obj !== "object") return;
+            if (obj.playlistVideoRenderer) {
+              const renderer = obj.playlistVideoRenderer;
+              const videoId = renderer.videoId;
+              const title =
+                renderer.title?.runs?.[0]?.text ||
+                renderer.title?.simpleText ||
+                "Ambient Track";
+              const artist =
+                renderer.shortBylineText?.runs?.[0]?.text ||
+                renderer.ownerText?.runs?.[0]?.text ||
+                "YouTube Artist";
 
-          if (obj.playlistVideoRenderer) {
-            const renderer = obj.playlistVideoRenderer;
-            const videoId = renderer.videoId;
-            const title =
-              renderer.title?.runs?.[0]?.text ||
-              renderer.title?.simpleText ||
-              "Ambient Track";
-            const artist =
-              renderer.shortBylineText?.runs?.[0]?.text ||
-              renderer.ownerText?.runs?.[0]?.text ||
-              "YouTube Artist";
-
-            if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId) && !seenIds.has(videoId)) {
-              seenIds.add(videoId);
-              tracks.push({
-                youtubeVideoId: videoId,
-                title: title.trim(),
-                artist: artist.trim(),
-                thumbnail: getYouTubeThumbnailUrl(videoId, "hq"),
-              });
+              if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId) && !seenIds.has(videoId)) {
+                seenIds.add(videoId);
+                tracks.push({
+                  youtubeVideoId: videoId,
+                  title: title.trim(),
+                  artist: artist.trim(),
+                  thumbnail: getYouTubeThumbnailUrl(videoId, "hq"),
+                });
+              }
             }
-          }
 
-          for (const key of Object.keys(obj)) {
-            if (Array.isArray(obj[key])) {
-              obj[key].forEach((child: any) => extractVideoRenderers(child));
-            } else if (typeof obj[key] === "object") {
-              extractVideoRenderers(obj[key]);
+            for (const key of Object.keys(obj)) {
+              if (Array.isArray(obj[key])) {
+                obj[key].forEach((child: any) => extractVideoRenderers(child));
+              } else if (typeof obj[key] === "object") {
+                extractVideoRenderers(obj[key]);
+              }
             }
-          }
-        };
+          };
 
-        extractVideoRenderers(jsonData);
+          extractVideoRenderers(jsonData);
+        } catch (e) {}
+      }
 
-        if (tracks.length > 0) {
-          console.log(`✔ Strategy B (HTML) fetched ${tracks.length} tracks from YouTube playlist ${cleanId}`);
-          return tracks;
+      // B2. Deep Regex extraction from full HTML if initial renderers had few items
+      const allExtractedIds = extractAllVideoIdsFromText(htmlText);
+      for (const vId of allExtractedIds) {
+        if (!seenIds.has(vId)) {
+          seenIds.add(vId);
+          tracks.push({
+            youtubeVideoId: vId,
+            title: `Ambient Track #${tracks.length + 1}`,
+            artist: "YouTube Creator",
+            thumbnail: getYouTubeThumbnailUrl(vId, "hq"),
+          });
         }
+      }
+
+      if (tracks.length > 0) {
+        console.log(`✔ Strategy B (HTML Deep Search) fetched ${tracks.length} tracks from YouTube playlist ${cleanId}`);
+        return tracks;
       }
     }
   } catch (htmlErr) {

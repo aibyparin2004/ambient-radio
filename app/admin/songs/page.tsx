@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { Music, Plus, Edit2, Trash2, X, ExternalLink } from "lucide-react";
+import { Music, Plus, Edit2, Trash2, X, ExternalLink, FileText, Download } from "lucide-react";
 
 interface Song {
   id: string;
@@ -132,6 +132,40 @@ export default function AdminSongsPage() {
     }
   };
 
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkImporting, setBulkImporting] = useState(false);
+
+  const handleBulkImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bulkText.trim()) return;
+    setBulkImporting(true);
+    try {
+      const res = await fetch("/api/songs/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playlistId: selectedPlaylistId || playlists[0]?.id,
+          bulkText,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`✔ Success! Imported ${data.countAdded} new tracks! Total tracks in playlist: ${data.totalSongs}`);
+        setIsBulkModalOpen(false);
+        setBulkText("");
+        loadData();
+      } else {
+        alert(data.error || "Failed to bulk import songs");
+      }
+    } catch (err) {
+      console.error("Bulk import error:", err);
+      alert("Network error while bulk importing songs");
+    } finally {
+      setBulkImporting(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 font-sans">
       <AdminSidebar />
@@ -146,13 +180,23 @@ export default function AdminSongsPage() {
             </p>
           </div>
 
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 rounded-xl bg-sky-500 px-4 py-2.5 text-xs font-semibold text-slate-950 hover:bg-sky-400 transition-colors shadow-lg shadow-sky-500/20"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add YouTube Song</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsBulkModalOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-emerald-500/20 px-4 py-2.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              <span>📥 Bulk Import 50+ YouTube Links</span>
+            </button>
+
+            <button
+              onClick={openCreateModal}
+              className="flex items-center gap-2 rounded-xl bg-sky-500 px-4 py-2.5 text-xs font-semibold text-slate-950 hover:bg-sky-400 transition-colors shadow-lg shadow-sky-500/20"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add YouTube Song</span>
+            </button>
+          </div>
         </div>
 
         {/* Playlist Filter Switcher */}
@@ -344,6 +388,74 @@ export default function AdminSongsPage() {
                     className="rounded-xl px-5 py-2.5 bg-sky-500 text-slate-950 font-semibold hover:bg-sky-400"
                   >
                     Save Track
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+        {/* Bulk Import Songs Modal */}
+        {isBulkModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
+            <div className="w-full max-w-xl rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Download className="h-5 w-5 text-emerald-400" />
+                  <h3 className="text-lg font-semibold text-white">Bulk Import 50+ YouTube Songs</h3>
+                </div>
+                <button onClick={() => setIsBulkModalOpen(false)} className="text-slate-400 hover:text-white">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleBulkImport} className="space-y-4 text-xs">
+                <div>
+                  <label className="text-slate-300 font-mono uppercase block mb-1">Select Target Playlist</label>
+                  <select
+                    value={selectedPlaylistId}
+                    onChange={(e) => setSelectedPlaylistId(e.target.value)}
+                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white font-mono focus:border-sky-500 focus:outline-none"
+                  >
+                    {playlists.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-mono uppercase block mb-1">
+                    Paste YouTube Links / Playlist Text (Paste 50, 100+ Links)
+                  </label>
+                  <textarea
+                    rows={8}
+                    required
+                    value={bulkText}
+                    onChange={(e) => setBulkText(e.target.value)}
+                    placeholder="Paste multiple YouTube video URLs, playlist page text, or video IDs here:&#10;https://www.youtube.com/watch?v=VIDEO_1&#10;https://www.youtube.com/watch?v=VIDEO_2&#10;https://youtu.be/VIDEO_3..."
+                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white font-mono leading-relaxed focus:border-sky-500 focus:outline-none"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Tip: Our extractor automatically finds and imports ALL YouTube video IDs from any pasted links or text!
+                  </p>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsBulkModalOpen(false)}
+                    className="rounded-xl px-4 py-2.5 bg-slate-800 text-slate-300 font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={bulkImporting}
+                    className="flex items-center gap-2 rounded-xl px-5 py-2.5 bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>{bulkImporting ? "Importing All Songs..." : "Import All Songs Now"}</span>
                   </button>
                 </div>
               </form>
