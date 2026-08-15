@@ -13,7 +13,7 @@ const ALLOWED_MIME_TYPES = new Set([
   "video/webm",
 ]);
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "File size exceeds limit (Max 25MB)" },
+        { error: "File size exceeds 15MB limit. Please compress image or paste URL." },
         { status: 400 }
       );
     }
@@ -51,18 +51,24 @@ export async function POST(request: Request) {
       : "jpg";
 
     const randomName = `${Date.now()}_${crypto.randomBytes(6).toString("hex")}.${safeExt}`;
-
-    // Target directory: public/uploads
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
-
-    const filePath = path.join(uploadDir, randomName);
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    await writeFile(filePath, buffer);
+    let publicUrl = "";
 
-    const publicUrl = `/uploads/${randomName}`;
+    // 1. Try local filesystem write (Works in Local Dev)
+    try {
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      await mkdir(uploadDir, { recursive: true });
+      const filePath = path.join(uploadDir, randomName);
+      await writeFile(filePath, buffer);
+      publicUrl = `/uploads/${randomName}`;
+    } catch (fsErr) {
+      // 2. Netlify / Vercel Serverless Read-Only Disk Fallback: Convert to Base64 Data URL
+      console.warn("Serverless read-only disk detected (Netlify). Falling back to Base64 Data URL encoding.");
+      const base64Str = buffer.toString("base64");
+      publicUrl = `data:${file.type};base64,${base64Str}`;
+    }
 
     return NextResponse.json({
       success: true,
