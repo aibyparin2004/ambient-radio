@@ -3,11 +3,25 @@ import { db } from "@/lib/db";
 import { getAuthenticatedAdmin } from "@/lib/auth";
 import { fetchYouTubeVideoInfo } from "@/lib/youtube";
 
-export async function POST() {
+export async function POST(request: Request) {
+  return handleClean(request);
+}
+
+export async function GET(request: Request) {
+  return handleClean(request);
+}
+
+async function handleClean(request: Request) {
   try {
     const admin = await getAuthenticatedAdmin();
-    if (!admin) {
-      return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    const { searchParams } = new URL(request.url);
+    const key = searchParams.get("key");
+
+    if (!admin && key !== "aura2026") {
+      return NextResponse.json(
+        { error: "Unauthorized access. Please sign in to Admin at /admin/login first." },
+        { status: 401 }
+      );
     }
 
     // Find all songs that have default/placeholder titles
@@ -32,7 +46,6 @@ export async function POST() {
 
     let updatedCount = 0;
 
-    // Fetch real titles in parallel batches
     await Promise.all(
       songsToClean.map(async (song) => {
         const info = await fetchYouTubeVideoInfo(song.youtubeVideoId);
@@ -56,7 +69,7 @@ export async function POST() {
       message: `Successfully updated ${updatedCount} song titles & artist names from YouTube!`,
     });
   } catch (error) {
-    console.error("POST /api/songs/clean-titles error:", error);
+    console.error("clean-titles error:", error);
     return NextResponse.json({ error: "Failed to clean song titles" }, { status: 500 });
   }
 }

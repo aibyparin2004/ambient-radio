@@ -45,13 +45,13 @@ export async function getAuthenticatedAdmin() {
 }
 
 export function setAuthCookieHeader(token: string) {
-  return `${TOKEN_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400; ${
+  return `${TOKEN_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400; ${
     process.env.NODE_ENV === "production" ? "Secure;" : ""
   }`;
 }
 
 export function clearAuthCookieHeader() {
-  return `${TOKEN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0; ${
+  return `${TOKEN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; ${
     process.env.NODE_ENV === "production" ? "Secure;" : ""
   }`;
 }
