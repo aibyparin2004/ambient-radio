@@ -325,93 +325,93 @@ export default function AdminSettingsPage() {
               </div>
             </div>
           </div>
+        </form>
 
-          {/* Section 3: Admin Security & Password Manager */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                <h3 className="text-sm font-semibold text-white">
-                  Admin Security & Change Password
-                </h3>
+        {/* Section 3: Admin Security & Password Manager (Independent Form) */}
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-emerald-400" />
+              <h3 className="text-sm font-semibold text-white">
+                Admin Security & Change Password
+              </h3>
+            </div>
+            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+              DATABASE ENCRYPTED (BCRYPT)
+            </span>
+          </div>
+
+          <form onSubmit={handleUpdatePassword} className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-slate-400 font-mono uppercase block mb-1">
+                  Admin Username
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={securityData.newUsername}
+                  onChange={(e) => setSecurityData({ ...securityData, newUsername: e.target.value })}
+                  placeholder="e.g. admin"
+                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
+                />
               </div>
-              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                DATABASE ENCRYPTED (BCRYPT)
-              </span>
+
+              <div>
+                <label className="text-slate-400 font-mono uppercase block mb-1">
+                  Current Password (Required)
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={securityData.currentPassword}
+                  onChange={(e) => setSecurityData({ ...securityData, currentPassword: e.target.value })}
+                  placeholder="Enter current password"
+                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
+                />
+              </div>
             </div>
 
-            <form onSubmit={handleUpdatePassword} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-slate-400 font-mono uppercase block mb-1">
-                    Admin Username
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={securityData.newUsername}
-                    onChange={(e) => setSecurityData({ ...securityData, newUsername: e.target.value })}
-                    placeholder="e.g. admin"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-slate-400 font-mono uppercase block mb-1">
-                    Current Password (Required)
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={securityData.currentPassword}
-                    onChange={(e) => setSecurityData({ ...securityData, currentPassword: e.target.value })}
-                    placeholder="Enter current password"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
-                  />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="text-slate-400 font-mono uppercase block mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={securityData.newPassword}
+                  onChange={(e) => setSecurityData({ ...securityData, newPassword: e.target.value })}
+                  placeholder="Enter new secure password (min 6 chars)"
+                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                <div>
-                  <label className="text-slate-400 font-mono uppercase block mb-1">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    value={securityData.newPassword}
-                    onChange={(e) => setSecurityData({ ...securityData, newPassword: e.target.value })}
-                    placeholder="Enter new secure password (min 6 chars)"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-slate-400 font-mono uppercase block mb-1">
-                    Confirm New Password
-                  </label>
-                  <input
-                    type="password"
-                    value={securityData.confirmPassword}
-                    onChange={(e) => setSecurityData({ ...securityData, confirmPassword: e.target.value })}
-                    placeholder="Confirm new password"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
-                  />
-                </div>
+              <div>
+                <label className="text-slate-400 font-mono uppercase block mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  value={securityData.confirmPassword}
+                  onChange={(e) => setSecurityData({ ...securityData, confirmPassword: e.target.value })}
+                  placeholder="Confirm new password"
+                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
+                />
               </div>
+            </div>
 
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={updatingPassword}
-                  className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50"
-                >
-                  <Key className="h-4 w-4" />
-                  <span>{updatingPassword ? "Updating Password..." : "Update Admin Password"}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </form>
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={updatingPassword}
+                className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+              >
+                <Key className="h-4 w-4" />
+                <span>{updatingPassword ? "Updating Password..." : "Update Admin Password"}</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </main>
     </div>
   );
