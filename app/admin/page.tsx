@@ -145,7 +145,139 @@ export default function AdminDashboardPage() {
             Edit Time Schedules
           </Link>
         </div>
+
+        {/* Change Admin Password Card */}
+        <AdminSecurityCard />
       </main>
+    </div>
+  );
+}
+
+function AdminSecurityCard() {
+  const [securityData, setSecurityData] = useState({
+    newUsername: "admin",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!securityData.currentPassword) {
+      alert("Please enter your current password.");
+      return;
+    }
+    if (securityData.newPassword && securityData.newPassword !== securityData.confirmPassword) {
+      alert("New password and confirm password do not match.");
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      const res = await fetch("/api/admin/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: securityData.currentPassword,
+          newUsername: securityData.newUsername,
+          newPassword: securityData.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("✔ Success! Admin credentials updated. Please use your new login credentials next time.");
+        setSecurityData({
+          newUsername: data.username || securityData.newUsername,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      } else {
+        alert(data.error || "Failed to update admin credentials.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error while updating credentials.");
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 className="text-base font-semibold text-white">🔒 Change Admin Password & Security</h3>
+          <p className="text-xs text-slate-400 font-mono">Update your Admin login credentials stored in Neon Cloud Database</p>
+        </div>
+        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+          ENCRYPTED (BCRYPT)
+        </span>
+      </div>
+
+      <form onSubmit={handleUpdatePassword} className="space-y-4 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-slate-400 font-mono uppercase block mb-1">Admin Username</label>
+            <input
+              type="text"
+              required
+              value={securityData.newUsername}
+              onChange={(e) => setSecurityData({ ...securityData, newUsername: e.target.value })}
+              placeholder="e.g. admin"
+              className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="text-slate-400 font-mono uppercase block mb-1">Current Password (Required)</label>
+            <input
+              type="password"
+              required
+              value={securityData.currentPassword}
+              onChange={(e) => setSecurityData({ ...securityData, currentPassword: e.target.value })}
+              placeholder="Enter current password"
+              className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div>
+            <label className="text-slate-400 font-mono uppercase block mb-1">New Password</label>
+            <input
+              type="password"
+              value={securityData.newPassword}
+              onChange={(e) => setSecurityData({ ...securityData, newPassword: e.target.value })}
+              placeholder="Enter new password (min 6 chars)"
+              className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="text-slate-400 font-mono uppercase block mb-1">Confirm New Password</label>
+            <input
+              type="password"
+              value={securityData.confirmPassword}
+              onChange={(e) => setSecurityData({ ...securityData, confirmPassword: e.target.value })}
+              placeholder="Confirm new password"
+              className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-white focus:border-sky-500 focus:outline-none font-mono"
+            />
+          </div>
+        </div>
+
+        <div className="pt-2 flex justify-end">
+          <button
+            type="submit"
+            disabled={updatingPassword}
+            className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+          >
+            <span>{updatingPassword ? "Updating..." : "Update Admin Password"}</span>
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
