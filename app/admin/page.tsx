@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { Disc3, Music, Palette, Clock, CheckCircle2, Radio, Sparkles } from "lucide-react";
+import { Disc3, Music, Palette, Clock, CheckCircle2, Radio, Sparkles, Key, X } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminDashboardPage() {
@@ -42,6 +42,8 @@ export default function AdminDashboardPage() {
     loadOverview();
   }, []);
 
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 font-sans">
       <AdminSidebar />
@@ -55,10 +57,38 @@ export default function AdminDashboardPage() {
               AURA Ambient Radio Control Hub
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-3.5 py-1.5 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
-            <CheckCircle2 className="h-4 w-4" />
-            <span>SYSTEM ONLINE</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsPasswordModalOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-emerald-500/20 px-4 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40 shadow-lg shadow-emerald-500/10 transition-all animate-pulse"
+            >
+              <span>🔐 CHANGE ADMIN PASSWORD</span>
+            </button>
+
+            <div className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-3.5 py-1.5 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>SYSTEM ONLINE</span>
+            </div>
           </div>
+        </div>
+
+        {/* Prominent Security Notice Banner */}
+        <div className="rounded-2xl bg-emerald-950/40 border border-emerald-500/30 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-white">Admin Credentials & Security Control</h4>
+              <p className="text-xs text-slate-300 font-mono">Update your admin username and password stored in Neon Cloud Database</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsPasswordModalOpen(true)}
+            className="flex-shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20"
+          >
+            Change Password Now &rarr;
+          </button>
         </div>
 
         {/* Stats Grid */}
@@ -148,6 +178,24 @@ export default function AdminDashboardPage() {
 
         {/* Change Admin Password Card */}
         <AdminSecurityCard />
+
+        {/* Global Change Password Popup Modal */}
+        {isPasswordModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
+            <div className="w-full max-w-xl rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Key className="h-5 w-5 text-emerald-400" />
+                  <h3 className="text-lg font-semibold text-white">Change Admin Password</h3>
+                </div>
+                <button onClick={() => setIsPasswordModalOpen(false)} className="text-slate-400 hover:text-white">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <AdminSecurityCard />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
