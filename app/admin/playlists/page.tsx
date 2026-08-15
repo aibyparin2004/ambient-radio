@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { Disc3, Plus, Edit2, Trash2, Music, X, Sparkles, Image as ImageIcon, Upload } from "lucide-react";
+import { Disc3, Plus, Edit2, Trash2, Music, X, Sparkles, Image as ImageIcon, Upload, RefreshCw } from "lucide-react";
 
 import { compressImageFile } from "@/lib/client-image-compressor";
 
@@ -188,6 +188,29 @@ export default function AdminPlaylistsPage() {
     }
   };
 
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  const handleSyncPlaylist = async (playlistId: string) => {
+    setSyncingId(playlistId);
+    try {
+      const res = await fetch(`/api/playlists/${playlistId}/sync`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`✔ Success! Synced ${data.countAdded} new tracks from YouTube! Total tracks: ${data.totalSongs}`);
+        loadPlaylists();
+      } else {
+        alert(data.error || "Failed to sync YouTube playlist tracks.");
+      }
+    } catch (err) {
+      console.error("Sync error:", err);
+      alert("Network error while syncing YouTube playlist.");
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this playlist?")) return;
     try {
@@ -285,17 +308,31 @@ export default function AdminPlaylistsPage() {
                 </div>
 
                 {/* Quick Track Action Bar */}
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/40">
-                  <button
-                    onClick={() => {
-                      setSelectedPlaylistForSong(pl.id);
-                      setIsSongModalOpen(true);
-                    }}
-                    className="flex items-center gap-1 text-[11px] font-medium text-sky-400 hover:text-sky-300 bg-sky-500/10 px-2.5 py-1 rounded-lg border border-sky-500/20"
-                  >
-                    <Plus className="h-3 w-3" />
-                    <span>Add Track</span>
-                  </button>
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/40">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        setSelectedPlaylistForSong(pl.id);
+                        setIsSongModalOpen(true);
+                      }}
+                      className="flex items-center gap-1 text-[11px] font-medium text-sky-400 hover:text-sky-300 bg-sky-500/10 px-2.5 py-1 rounded-lg border border-sky-500/20"
+                    >
+                      <Plus className="h-3 w-3" />
+                      <span>Add Track</span>
+                    </button>
+
+                    {pl.youtubePlaylistId && (
+                      <button
+                        onClick={() => handleSyncPlaylist(pl.id)}
+                        disabled={syncingId === pl.id}
+                        title="Fetch & import all 50-100+ tracks directly from YouTube"
+                        className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 disabled:opacity-50"
+                      >
+                        <RefreshCw className={`h-3 w-3 ${syncingId === pl.id ? "animate-spin" : ""}`} />
+                        <span>{syncingId === pl.id ? "Syncing..." : "Sync All Tracks"}</span>
+                      </button>
+                    )}
+                  </div>
 
                   <Link
                     href={`/admin/songs`}
