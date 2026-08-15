@@ -14,6 +14,7 @@ import {
   Shield,
   LogOut,
   ExternalLink,
+  Key,
 } from "lucide-react";
 
 export const AdminSidebar: React.FC = () => {
@@ -38,6 +39,7 @@ export const AdminSidebar: React.FC = () => {
     { name: "Themes", href: "/admin/themes", icon: Palette },
     { name: "Schedule", href: "/admin/schedule", icon: Clock },
     { name: "Settings", href: "/admin/settings", icon: Settings },
+    { name: "Security & Password", href: "/admin/security", icon: Key },
   ];
 
   return (
