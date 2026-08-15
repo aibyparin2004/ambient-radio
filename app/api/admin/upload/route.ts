@@ -13,7 +13,7 @@ const ALLOWED_MIME_TYPES = new Set([
   "video/webm",
 ]);
 
-const MAX_FILE_SIZE = 4.5 * 1024 * 1024; // 4.5 MB Optimal limit for Serverless & Base64
+const MAX_FILE_SIZE = 30 * 1024 * 1024; // 30 MB
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "File size exceeds 4.5MB limit. Please compress image or paste image/video URL." },
+        { error: "File size exceeds 30MB limit. Please choose a smaller file or paste URL." },
         { status: 400 }
       );
     }

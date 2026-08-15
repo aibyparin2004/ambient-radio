@@ -5,6 +5,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { LiveThemePreview } from "@/components/admin/LiveThemePreview";
 import { ThemeBackground } from "@/components/environment/ThemeBackground";
 import { EnvironmentPreset, DEFAULT_THEME_PRESETS, ThemeName } from "@/lib/environment-engine";
+import { compressImageFile } from "@/lib/client-image-compressor";
 import { Palette, Save, Upload, Sun, Moon, CloudSun, CloudRain, Snowflake, Sparkles, Sliders, Eye } from "lucide-react";
 
 const THEME_ICONS: Record<ThemeName, React.ReactNode> = {
@@ -65,12 +66,14 @@ export default function AdminThemesPage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    const uploadData = new FormData();
-    uploadData.append("file", file);
-
     setUploading(true);
     try {
+      const originalFile = files[0];
+      const file = await compressImageFile(originalFile);
+
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+
       const res = await fetch("/api/admin/upload", {
         method: "POST",
         body: uploadData,

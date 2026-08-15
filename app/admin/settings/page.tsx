@@ -4,6 +4,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Settings, Save, Upload, Sparkles, Image as ImageIcon } from "lucide-react";
 
+import { compressImageFile } from "@/lib/client-image-compressor";
+
 interface SiteSettings {
   siteName: string;
   logoText: string;
@@ -63,12 +65,14 @@ export default function AdminSettingsPage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    const uploadData = new FormData();
-    uploadData.append("file", file);
-
     setUploading(true);
     try {
+      const originalFile = files[0];
+      const file = await compressImageFile(originalFile);
+
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+
       const res = await fetch("/api/admin/upload", {
         method: "POST",
         body: uploadData,
