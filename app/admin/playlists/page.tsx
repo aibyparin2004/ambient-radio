@@ -122,7 +122,7 @@ export default function AdminPlaylistsPage() {
     setIsModalOpen(true);
   };
 
-  // Upload Local File for specific field from system with automatic canvas compression
+  // Upload Local File for specific field from system with automatic canvas compression for images
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -131,10 +131,26 @@ export default function AdminPlaylistsPage() {
 
     try {
       const originalFile = files[0];
-      const file = await compressImageFile(originalFile);
+      const isVideo = originalFile.type.startsWith("video/");
+
+      // Netlify Serverless Payload Guard for Video Files
+      if (isVideo && originalFile.size > 3.2 * 1024 * 1024) {
+        alert(
+          `⚠️ Video file is too large (${(originalFile.size / (1024 * 1024)).toFixed(1)}MB).\n\n` +
+          `Netlify serverless limits video uploads to 3.2MB max to prevent network drop errors.\n\n` +
+          `PRO TIP: Please paste a Video URL (e.g. YouTube link or https://.../video.mp4) in the input box, or select a video under 3MB!`
+        );
+        setUploadingField(null);
+        return;
+      }
+
+      let fileToUpload = originalFile;
+      if (!isVideo) {
+        fileToUpload = await compressImageFile(originalFile);
+      }
 
       const uploadData = new FormData();
-      uploadData.append("file", file);
+      uploadData.append("file", fileToUpload);
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",
@@ -153,7 +169,7 @@ export default function AdminPlaylistsPage() {
       }));
     } catch (err) {
       console.error("Upload error:", err);
-      alert("Network error while uploading file");
+      alert("Network error while uploading file. Video file might exceed Netlify's 3.2MB serverless payload limit. Please use a video URL (e.g. YouTube link or https://.../video.mp4) or a smaller file.");
     } finally {
       setUploadingField(null);
     }
@@ -178,7 +194,7 @@ export default function AdminPlaylistsPage() {
         setIsModalOpen(false);
         await loadPlaylists();
       } else {
-        alert(data.error || data.message || "Failed to save playlist. Image size might be too large.");
+        alert(data.error || data.message || "Failed to save playlist. Large video file or Base64 payload might exceed Netlify's 4.5MB serverless size limit. Please paste a video URL (e.g. YouTube link or https://.../video.mp4) instead.");
       }
     } catch (e) {
       console.error(e);
