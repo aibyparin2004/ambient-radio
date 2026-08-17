@@ -18,51 +18,62 @@ export const RoomLoadingScreen: React.FC<RoomLoadingScreenProps> = ({
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isMounted, setIsMounted] = useState(true);
 
+  // 1. Smooth Progress Incrementation while APIs & YouTube Audio load
   useEffect(() => {
-    // 1. Smooth Progress Bar Animation (0% -> 100% in ~1.8 seconds)
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev < 35) return prev + 12;
-        if (prev < 70) return prev + 8;
-        if (prev < 95) return prev + 5;
-        return 100;
-      });
-    }, 120);
+    let interval: NodeJS.Timeout;
 
-    // 2. Guaranteed Safety Unlock Timer (Unlocks screen in 2.2 seconds max so it NEVER gets stuck!)
+    if (isLoading) {
+      setIsMounted(true);
+      setIsFadingOut(false);
+
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev < 35) return prev + 7;
+          if (prev < 70) return prev + 4;
+          if (prev < 88) return prev + 2;
+          if (prev < 95) return prev + 1; // Wait at 95% until YouTube Player & Songs are 100% ready
+          return prev;
+        });
+      }, 100);
+    } else {
+      // 2. Data & Audio are 100% Ready! Jump to 100% and fade out cleanly
+      setProgress(100);
+
+      const timer = setTimeout(() => {
+        setIsFadingOut(true);
+        setTimeout(() => {
+          setIsMounted(false);
+        }, 700);
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isLoading]);
+
+  // 3. Fallback Safety Timeout (5s max) to guarantee unmounting on super slow connections
+  useEffect(() => {
     const safetyTimer = setTimeout(() => {
       setProgress(100);
       setIsFadingOut(true);
       setTimeout(() => {
         setIsMounted(false);
-      }, 600);
-    }, 2200);
+      }, 700);
+    }, 4500);
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(safetyTimer);
-    };
+    return () => clearTimeout(safetyTimer);
   }, []);
-
-  // When isLoading becomes false from parent API finish
-  useEffect(() => {
-    if (!isLoading && isMounted && !isFadingOut) {
-      setProgress(100);
-      setIsFadingOut(true);
-      const timer = setTimeout(() => {
-        setIsMounted(false);
-      }, 600);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, isMounted, isFadingOut]);
 
   if (!isMounted) return null;
 
   const getStatusText = (val: number) => {
     if (val < 35) return "Initializing Ambient Atmosphere...";
     if (val < 70) return "Loading Audio Streams & Playlists...";
-    if (val < 95) return "Preparing High-Quality Soundscape...";
-    return "Entering Room... Enjoy Music!";
+    if (val < 95) return "Connecting to YouTube Soundscape...";
+    return "Song Ready! Entering Room...";
   };
 
   return (

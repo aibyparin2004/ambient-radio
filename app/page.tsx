@@ -286,7 +286,13 @@ export default function PublicMusicRoomPage() {
           volume={volume}
           isMuted={isMuted}
           seekToTime={seekToTime}
+          onReady={() => {
+            setIsLoadingRoom(false);
+          }}
           onStateChange={(state) => {
+            if (state === 1 || state === 3) {
+              setIsLoadingRoom(false);
+            }
             if (state === 0) handleNextSong();
           }}
           onProgress={(cur, dur) => {
