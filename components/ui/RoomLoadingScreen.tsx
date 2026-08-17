@@ -19,44 +19,48 @@ export const RoomLoadingScreen: React.FC<RoomLoadingScreenProps> = ({
   const [isMounted, setIsMounted] = useState(true);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    // 1. Smooth Progress Bar Animation (0% -> 100% in ~1.8 seconds)
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev < 35) return prev + 12;
+        if (prev < 70) return prev + 8;
+        if (prev < 95) return prev + 5;
+        return 100;
+      });
+    }, 120);
 
-    if (isLoading) {
-      setIsMounted(true);
-      setIsFadingOut(false);
-      setProgress(0);
-
-      // Smooth step increment towards 90% while APIs fetch
-      const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev < 30) return prev + 5;
-          if (prev < 70) return prev + 3;
-          if (prev < 90) return prev + 1;
-          return prev;
-        });
-      }, 100);
-
-      return () => clearInterval(interval);
-    } else {
-      // Accelerate to 100% when APIs finish loading
+    // 2. Guaranteed Safety Unlock Timer (Unlocks screen in 2.2 seconds max so it NEVER gets stuck!)
+    const safetyTimer = setTimeout(() => {
       setProgress(100);
+      setIsFadingOut(true);
+      setTimeout(() => {
+        setIsMounted(false);
+      }, 600);
+    }, 2200);
 
-      timer = setTimeout(() => {
-        setIsFadingOut(true);
-        setTimeout(() => {
-          setIsMounted(false);
-        }, 700);
-      }, 400);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(safetyTimer);
+    };
+  }, []);
 
+  // When isLoading becomes false from parent API finish
+  useEffect(() => {
+    if (!isLoading && isMounted && !isFadingOut) {
+      setProgress(100);
+      setIsFadingOut(true);
+      const timer = setTimeout(() => {
+        setIsMounted(false);
+      }, 600);
       return () => clearTimeout(timer);
     }
-  }, [isLoading]);
+  }, [isLoading, isMounted, isFadingOut]);
 
   if (!isMounted) return null;
 
   const getStatusText = (val: number) => {
-    if (val < 30) return "Initializing Ambient Atmosphere...";
-    if (val < 65) return "Loading Audio Streams & Playlists...";
+    if (val < 35) return "Initializing Ambient Atmosphere...";
+    if (val < 70) return "Loading Audio Streams & Playlists...";
     if (val < 95) return "Preparing High-Quality Soundscape...";
     return "Entering Room... Enjoy Music!";
   };
