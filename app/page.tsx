@@ -11,6 +11,8 @@ import { AutoplayOverlay } from "@/components/player/AutoplayOverlay";
 import { LiveClockWidget } from "@/components/ui/LiveClockWidget";
 import { LiveListenersBadge } from "@/components/ui/LiveListenersBadge";
 
+import { RoomLoadingScreen } from "@/components/ui/RoomLoadingScreen";
+
 import {
   EnvironmentPreset,
   DEFAULT_THEME_PRESETS,
@@ -90,6 +92,7 @@ export default function PublicMusicRoomPage() {
   const [seekToTime, setSeekToTime] = useState<number | null>(null);
 
   // UI State
+  const [isLoadingRoom, setIsLoadingRoom] = useState(true);
   const [showAutoplayOverlay, setShowAutoplayOverlay] = useState(false);
   const [isPlaylistDrawerOpen, setIsPlaylistDrawerOpen] = useState(false);
   const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState(false);
@@ -169,6 +172,8 @@ export default function PublicMusicRoomPage() {
         }
       } catch (e) {
         console.error("Room init error:", e);
+      } finally {
+        setIsLoadingRoom(false);
       }
     }
 
@@ -263,6 +268,13 @@ export default function PublicMusicRoomPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-slate-950 font-sans text-slate-100 select-none">
+      {/* Sleek Preloader Screen with Live 0-100% Progress Bar */}
+      <RoomLoadingScreen
+        isLoading={isLoadingRoom}
+        siteName={siteName}
+        subtitle={activePlaylist?.centerSubtitle || "URBAN GUJARATI AMBIENT RADIO • OPEN ALL HOURS"}
+      />
+
       {/* 1. Dynamic Real-time Background Shader & Atmosphere Canvas */}
       <ThemeBackground theme={resolvedThemePreset} reduceMotion={reduceMotion} />
 
