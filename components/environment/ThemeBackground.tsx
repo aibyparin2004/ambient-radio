@@ -9,12 +9,27 @@ interface ThemeBackgroundProps {
   reduceMotion?: boolean;
 }
 
+function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
+}
+
 export const ThemeBackground: React.FC<ThemeBackgroundProps> = ({
   theme,
   reduceMotion = false,
 }) => {
-  const isVideo = theme.backgroundType === "video" && theme.backgroundUrl;
-  const isImage = theme.backgroundType === "image" && theme.backgroundUrl;
+  const bgUrl = theme.backgroundUrl || "";
+  const ytId = extractYouTubeId(bgUrl);
+
+  const isDirectVideo =
+    theme.backgroundType === "video" ||
+    bgUrl.includes(".mp4") ||
+    bgUrl.includes(".webm") ||
+    bgUrl.startsWith("data:video/");
+
+  const isImage = !ytId && !isDirectVideo && (theme.backgroundType === "image" || Boolean(bgUrl));
 
   const defaultShaderMap: Record<ThemeName, EnvironmentPreset["particleType"]> = {
     DAY: "sunrays",
@@ -33,7 +48,7 @@ export const ThemeBackground: React.FC<ThemeBackgroundProps> = ({
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none">
-      {/* 1. Base Layer (z-0): Custom Background Image / Video / Dynamic Gradient */}
+      {/* 1. Base Layer (z-0): Custom Background Image / YouTube Video / Direct MP4 Video / Dynamic Gradient */}
       <div
         className="absolute inset-0 h-full w-full transition-all duration-1000 ease-in-out z-0"
         style={{
@@ -41,23 +56,36 @@ export const ThemeBackground: React.FC<ThemeBackgroundProps> = ({
           filter: `blur(${theme.blurAmount}px) brightness(${theme.brightness})`,
         }}
       >
-        {isImage && (
-          <img
-            src={theme.backgroundUrl!}
-            alt="Environment Atmosphere"
-            className="h-full w-full object-cover transition-opacity duration-1000"
-          />
+        {/* YouTube Video Background Embed */}
+        {ytId && (
+          <div className="absolute inset-0 h-full w-full overflow-hidden pointer-events-none scale-125">
+            <iframe
+              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${ytId}&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1`}
+              className="h-full w-full object-cover border-0 pointer-events-none"
+              allow="autoplay; encrypted-media"
+            />
+          </div>
         )}
-        {isVideo && (
+
+        {/* Direct MP4 / WebM / Data URL Video Background */}
+        {!ytId && isDirectVideo && (
           <video
             autoPlay
             loop
             muted
             playsInline
+            src={bgUrl}
             className="h-full w-full object-cover transition-opacity duration-1000"
-          >
-            <source src={theme.backgroundUrl!} />
-          </video>
+          />
+        )}
+
+        {/* Static Background Image */}
+        {!ytId && !isDirectVideo && isImage && (
+          <img
+            src={bgUrl}
+            alt="Environment Atmosphere"
+            className="h-full w-full object-cover transition-opacity duration-1000"
+          />
         )}
       </div>
 
@@ -71,7 +99,7 @@ export const ThemeBackground: React.FC<ThemeBackgroundProps> = ({
         }}
       />
 
-      {/* 3. Atmospheric Canvas Motion Shaders (z-20 — Vividly visible on top of custom background & vignette) */}
+      {/* 3. Atmospheric Canvas Motion Shaders (z-20) */}
       <div className="absolute inset-0 z-20 pointer-events-none">
         <EnvironmentCanvas
           particleType={activeParticleType}

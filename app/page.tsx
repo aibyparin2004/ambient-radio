@@ -220,7 +220,12 @@ export default function PublicMusicRoomPage() {
     const activeBg = activePlaylistBg || masterDefaultBg || baseTheme.backgroundUrl;
 
     if (activeBg) {
-      const isVideo = activeBg.endsWith(".mp4") || activeBg.endsWith(".webm");
+      const isYouTube = activeBg.includes("youtube.com") || activeBg.includes("youtu.be");
+      const isVideo =
+        isYouTube ||
+        activeBg.includes(".mp4") ||
+        activeBg.includes(".webm") ||
+        activeBg.startsWith("data:video/");
       return {
         ...baseTheme,
         backgroundType: isVideo ? ("video" as const) : ("image" as const),
